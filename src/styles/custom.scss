@@ -1,0 +1,20 @@
+.lucencyInput .el-input__inner {
+  border: 1px solid #fff;
+  pointer-events:none;
+  text-align:left;
+}
+.el-select__caret_none .el-select__caret{
+  opacity: 0;
+  pointer-events:none;
+}
+.el-input__icon_none .el-input__icon{
+  opacity: 0;
+  pointer-events:none;
+}
+.el-icon-arrow-up_none .el-icon-arrow-up{
+  opacity: 0;
+  pointer-events:none;
+}
+.disabled .el-upload--picture-card {
+    display: none;
+}
