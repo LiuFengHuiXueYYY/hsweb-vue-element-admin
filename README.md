@@ -12,7 +12,7 @@ hsweb作者传送门  https://github.com/hs-web
   
   
 4.项目打包
-  1.npm run build
+  1.npm run build:prod
   
 5.如果有自己的框架，也只要复制我common里面的，稍微修改也是可以直接跑的
 
