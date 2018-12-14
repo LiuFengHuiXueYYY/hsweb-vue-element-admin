@@ -67,6 +67,9 @@ if (getToken()) {
                 let url = cval.url
                 url = url.replace('list.html', 'index')
                 url = url.replace('index.html', 'index')
+                if (url.indexOf('admin') == 0) {
+                  url = 'common/' + url
+                }
                 let urlList = url.split('/')
                 secondEnum.path = cval.path
                 if (index == 0) {
@@ -91,6 +94,9 @@ if (getToken()) {
             let url = val.url
             url = url.replace('list.html', 'index')
             url = url.replace('index.html', 'index')
+            if (url.indexOf('admin') == 0) {
+              url = 'common/' + url
+            }
             firstEnum.redirect = '/' + firstEnum.path + '/' +
               secondEnum.path
             let urlList = url.split('/')
