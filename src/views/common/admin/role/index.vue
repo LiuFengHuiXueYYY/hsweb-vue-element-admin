@@ -109,11 +109,11 @@ from '@/utils/auth'
 import {
     urlSplice, urlMerge, urlUpdate, imgCreated, imgUrlGen, imgEmpty
 }
-from '@/utils/uploadUtil'
+from '@/utils/common/uploadUtil'
 import {
     createQueryDSL
 }
-from '@/utils/createDSLUtil'
+from '@/utils/common/createDSLUtil'
 import Split from '@/components/Split'
 import Transfer from '@/components/Transfer/main'
 import {
@@ -124,11 +124,11 @@ import {
     autzsetting, updateAutzSetting
 }
 from '@/api/common/autzsetting'
-import '@/styles/custom.scss'
+import '@/styles/common/custom.scss'
 import {
     buildTree
 }
-from '@/utils/treeUtil'
+from '@/utils/common/treeUtil'
 let circularJson = require('circular-json');
 export default {
     data() {

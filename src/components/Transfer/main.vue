@@ -11,7 +11,7 @@
 </template>
 
 <script>
-  import { buildTree } from '@/utils/treeUtil'
+  import { buildTree } from '@/utils/common/treeUtil'
   import TransferPanel from './transfer-panel.vue';
   export default {
     name: 'ElTransfer',

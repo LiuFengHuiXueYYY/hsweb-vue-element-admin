@@ -27,7 +27,7 @@ import {
   menuUserTree
 }
 from '@/api/common/menu'
-import getImport from '@/utils/menuUtil'
+import getImport from '@/utils/common/menuUtil'
 Vue.use(Router)
 Vue.use(Element, {
   size: Cookies.get('size') || 'medium', // set element-ui default size

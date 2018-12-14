@@ -120,12 +120,12 @@ from '@/utils/auth'
 import {
     urlSplice, urlMerge, urlUpdate, imgCreated, imgUrlGen, imgEmpty
 }
-from '@/utils/uploadUtil'
+from '@/utils/common/uploadUtil'
 import {
     createQueryDSL
 }
-from '@/utils/createDSLUtil'
-import '@/styles/custom.scss'
+from '@/utils/common/createDSLUtil'
+import '@/styles/common/custom.scss'
 import Split from '@/components/Split'
 import editTable from '@/components/EditTable'
 export default {

@@ -52,15 +52,15 @@ from '@/utils/auth'
 import {
     buildTree
 }
-from '@/utils/treeUtil'
+from '@/utils/common/treeUtil'
 import {
     urlSplice, urlMerge, urlUpdate, imgCreated, imgUrlGen, imgEmpty
 }
-from '@/utils/uploadUtil'
+from '@/utils/common/uploadUtil'
 import {
     createQueryDSL
 }
-from '@/utils/createDSLUtil'
+from '@/utils/common/createDSLUtil'
 import {
     menuTree, menuUserTree, menuAddOrUpdate, menuDelete
 }
@@ -70,7 +70,7 @@ import {
 }
 from '@/api/common/autzsetting'
 import store from '@/store'
-import '@/styles/custom.scss'
+import '@/styles/common/custom.scss'
 import treeTable from '@/components/TreeTable'
 import Split from '@/components/Split'
 import Transfer from '@/components/Transfer/main'
