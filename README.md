@@ -1,5 +1,5 @@
 1.我也是做后端的，所以要去做一个前端完整的框架还是比较不愿意的，所以直接采用vue-element-admin传送门https://github.com/PanJiaChen/vue-element-admin  感谢作者
-
+hsweb作者传送门  https://github.com/hs-web
 
 
 2.如果用vue-element-admin原作者的框架，直接复制文件夹里面所有的common，然后配置路由，就可以了，我的这个是动态加载hsweb后台的路由
