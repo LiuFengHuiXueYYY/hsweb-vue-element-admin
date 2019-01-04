@@ -26,7 +26,6 @@ export function permissionUpdate(params) {
 export function permissionDelete(params) {
   return request({
     url: '/permission/' + params.id,
-    method: 'DELETE',
-    data: params
+    method: 'DELETE'
   })
 }

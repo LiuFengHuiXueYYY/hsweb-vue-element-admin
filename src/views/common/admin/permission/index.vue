@@ -56,7 +56,7 @@
     <el-dialog title="" :visible.sync="isShowEditVisible">
         <el-tabs @tab-click="handleClick" type="border-card">
             <el-tab-pane label="基本信息">
-                <el-form label-position=l eft label-width="130px" :model="temp">
+                <el-form label-position=left label-width="130px" ref="rules_form" :rules="rules" :model="temp">
                     <Split title="添加权限信息"></Split>
                     <el-row :gutter="22">
                         <el-col :span="11">
@@ -95,7 +95,7 @@
         </el-tabs>
         <div slot="footer" class="dialog-footer">
             <el-button @click="isShowEditVisible = false">取消</el-button>
-            <el-button type="primary" :loading="listLoading" @click="updateData" class="title1">确定</el-button>
+            <el-button type="primary" :loading="listLoading" @click="updateData('rules_form')" class="title1">确定</el-button>
         </div>
     </el-dialog>
 
@@ -128,12 +128,31 @@ from '@/utils/common/createDSLUtil'
 import '@/styles/common/custom.scss'
 import Split from '@/components/Split'
 import editTable from '@/components/EditTable'
+import {
+    patterns
+}
+from '@/utils/common/patterns'
 export default {
     data() {
             return {
                 token: getToken(),
                 uploadUrl: process.env.BASE_API + '/file/upload?token=' + getToken(),
                 downloadBaseUrl: process.env.BASE_API + '/file/download/',
+                rules: {
+                    id: [{
+                        required: true,
+                        message: '请输入权限标识(ID)',
+                        trigger: 'blur'
+                    }, {
+                        pattern: patterns.p1,
+                        message: '字符、数字和下划线'
+                    }],
+                    name: [{
+                        required: true,
+                        message: '请输入权限名称',
+                        trigger: 'blur'
+                    }]
+                },
                 tableList: [],
                 //所有图片字段
                 imgFieldList: [],
@@ -245,16 +264,16 @@ export default {
                     text: '默认选中',
                     value: 'defaultCheck',
                     width: 200,
-                    component:'el-select',
-                    component_config:{
-                      options: [{
-                          value: true,
-                          label: '是'
-                      }, {
-                          value: false,
-                          label: '否'
-                      }],
-                      value:true
+                    component: 'el-select',
+                    component_config: {
+                        options: [{
+                            value: true,
+                            label: '是'
+                        }, {
+                            value: false,
+                            label: '否'
+                        }],
+                        value: true
                     }
                 }, {
                     text: '操作',
@@ -263,8 +282,8 @@ export default {
                     button: [{
                         icon: 'icon-quxiao',
                         excFun: function(row, that) {
-                          const index = that.data.indexOf(row)
-                          that.data.splice(index, 1)
+                            const index = that.data.indexOf(row)
+                            that.data.splice(index, 1)
                         }
                     }],
                     head_button: [{
@@ -381,66 +400,79 @@ export default {
                     }
                 },
                 //修改和新增
-                updateData() {
-                    let that = this
-                        // if (this.current_pane == "0") {
-                        //     that.updateData0(that)
-                        // } else {
-                        //     that.updateData1(that)
-                        // }
-                    const tempData = Object.assign({}, that.temp)
-                    urlUpdate(that, tempData)
-                    tempData.actions = that.allMenuList
-                    tempData.supportDataAccessTypes = that.support_list
-                    if (that.editStatus) {
-                        permissionAdd(tempData).then(() => {
-                            that.tableList.push(that.temp)
-                            that.isShowEditVisible = false
-                            that.temp.actions = tempData.actions
-                            that.temp.supportDataAccessTypes = tempData.supportDataAccessTypes
-                            that.allMenuList = tempData.actions
-                            that.temp.status = 1
-                            that.support_list = tempData.supportDataAccessTypes
-                            that.$notify({
-                                title: '成功',
-                                message: '新增成功',
-                                type: 'success',
-                                duration: 2000
-                            })
-                        })
-                    } else {
-                        permissionUpdate(tempData).then(() => {
-                            for (const v of that.tableList) {
-                                if (v.id === that.temp.id) {
-                                    const index = that.tableList.indexOf(v)
-                                    that.temp.supportDataAccessTypes = that.support_list
-                                    that.tableList.splice(index, 1, that.temp)
-                                    break
-                                }
+                updateData(rules_form) {
+                    this.$refs[rules_form].validate((valid) => {
+                        if (valid) {
+                            let that = this
+                            const tempData = Object.assign({}, that.temp)
+                            urlUpdate(that, tempData)
+                            tempData.actions = that.allMenuList
+                            tempData.supportDataAccessTypes = that.support_list
+                            if (that.editStatus) {
+                                permissionAdd(tempData).then(() => {
+                                    that.tableList.push(that.temp)
+                                    that.isShowEditVisible = false
+                                    that.temp.actions = tempData.actions
+                                    that.temp.supportDataAccessTypes = tempData.supportDataAccessTypes
+                                    that.allMenuList = tempData.actions
+                                    that.temp.status = 1
+                                    that.support_list = tempData.supportDataAccessTypes
+                                    that.$notify({
+                                        title: '成功',
+                                        message: '新增成功',
+                                        type: 'success',
+                                        duration: 2000
+                                    })
+                                })
+                            } else {
+                                permissionUpdate(tempData).then(() => {
+                                    for (const v of that.tableList) {
+                                        if (v.id === that.temp.id) {
+                                            const index = that.tableList.indexOf(v)
+                                            that.temp.supportDataAccessTypes = that.support_list
+                                            that.tableList.splice(index, 1, that.temp)
+                                            break
+                                        }
+                                    }
+                                    that.isShowEditVisible = false
+                                    that.$notify({
+                                        title: '成功',
+                                        message: '更新成功',
+                                        type: 'success',
+                                        duration: 2000
+                                    })
+                                })
                             }
-                            that.isShowEditVisible = false
-                            that.$notify({
-                                title: '成功',
-                                message: '更新成功',
-                                type: 'success',
-                                duration: 2000
-                            })
-                        })
-                    }
+                        } else {
+                            return false
+                        }
+                    })
                 },
                 deletePermission(val, scope) {
                     let that = this
                     if (scope) val = this.tableList[scope.$index]
-                    permissionDelete(val).then(() => {
-                        const index = this.tableList.indexOf(val)
-                        this.tableList.splice(index, 1)
-                        that.$notify({
-                            title: '成功',
-                            message: '删除成功',
-                            type: 'success',
-                            duration: 2000
-                        })
-                    })
+                    this.$confirm('此操作将永久删除该数据, 是否继续?', '提示', {
+                      confirmButtonText: '确定',
+                      cancelButtonText: '取消',
+                      type: 'warning'
+                    }).then(() => {
+                      permissionDelete(val.row).then(() => {
+                          const index = this.tableList.indexOf(val)
+                          this.tableList.splice(index, 1)
+                          that.$notify({
+                              title: '成功',
+                              message: '删除成功',
+                              type: 'success',
+                              duration: 2000
+                          })
+                      })
+                    }).catch(() => {
+                      this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                      });
+                    });
+
                 },
                 handleSizeChange(val) {
                     this.page = val

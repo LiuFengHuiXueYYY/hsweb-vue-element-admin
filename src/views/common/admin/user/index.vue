@@ -50,7 +50,7 @@
 
     <!-- 新增编辑院校 -->
     <el-dialog title="" :visible.sync="isShowEditVisible">
-        <el-form label-width="100px" :model="temp">
+        <el-form label-width="100px" ref="rules_form" :rules="rules" :model="temp">
             <Split title="添加用户"></Split>
             <el-row :gutter="22">
                 <el-col :span="22">
@@ -61,12 +61,12 @@
             </el-row>
             <el-row :gutter="22">
                 <el-col :span="11">
-                    <el-form-item label="用户名" prop="phone">
+                    <el-form-item label="用户名" prop="username">
                         <el-input v-model="temp.username"></el-input>
                     </el-form-item>
                 </el-col>
                 <el-col :span="11">
-                    <el-form-item label="密码" prop="businessLicense">
+                    <el-form-item label="密码" prop="password">
                         <el-input v-model="temp.password"></el-input>
                     </el-form-item>
                 </el-col>
@@ -107,7 +107,8 @@
         </el-tabs>
         <div slot="footer" class="dialog-footer">
             <el-button @click="roleVisible = false">取消</el-button>
-            <el-button type="primary" @click="updateAutzSettingData" class="title1">确定</el-button>
+            <!-- 要传入ref的值 -->
+            <el-button type="primary" @click="updateAutzSettingData('rules_form')" class="title1">确定</el-button>
         </div>
     </el-dialog>
 </div>
@@ -152,6 +153,10 @@ import {
     buildTree
 }
 from '@/utils/common/treeUtil'
+import {
+    patterns
+}
+from '@/utils/common/patterns'//正则统一管理
 let circularJson = require('circular-json');
 export default {
     data() {
@@ -159,6 +164,23 @@ export default {
                 token: getToken(),
                 uploadUrl: process.env.BASE_API + '/file/upload?token=' + getToken(),
                 downloadBaseUrl: process.env.BASE_API + '/file/download/',
+                rules: {
+                    username: [{
+                        required: true,
+                        message: '请输入用户名',
+                        trigger: 'blur'
+                    }],
+                    name: [{
+                        required: true,
+                        message: '请输入姓名',
+                        trigger: 'blur'
+                    }],
+                    password: [{
+                        required: true,
+                        message: '请输入密码',
+                        trigger: 'blur'
+                    }]
+                },
                 tableList: [],
                 roleTableList: [],
                 //所有图片字段
@@ -470,44 +492,49 @@ export default {
                         })
                     }
                 },
-                updateAutzSettingData() {
-                    let that = this
-                    const tempData = Object.assign({}, that.temp)
-                    let autzSettingData = {}
-                    autzSettingData.type = 'user'
-                    autzSettingData.settingFor = tempData.id
-                    let menusList = []
-                    that.datasLeft.forEach(function(obj) {
-                        let menus = {}
-                        if (obj['menu']) {
-                            Object.keys(obj).forEach(function(key) {
-                                if (key != 'parent' && key != 'children' && key != 'menu') {
-                                    menus[key] = obj[key]
-                                }
-                                if (!obj['menuId']) {
-                                    menus.menuId = obj.menu.id
-                                }
-                            })
-                            menus.parentId = obj.parentId
-                            menus.id = obj.id
-                        } else {
-                            menus.menuId = obj.id
-                            menus.children = []
-                            menus.parentId = obj.parentId
-                        }
-                        menusList.push(menus)
-                    })
-                    autzSettingData.menus = buildTree(menusList)
-                    updateAutzSetting(autzSettingData).then(() => {
-
-                        that.roleVisible = false
-                        that.$notify({
-                            title: '成功',
-                            message: '更新成功',
-                            type: 'success',
-                            duration: 2000
+                updateAutzSettingData(rules_form) {
+                  this.$refs[rules_form].validate((valid) => {
+                      if (valid) {
+                        let that = this
+                        const tempData = Object.assign({}, that.temp)
+                        let autzSettingData = {}
+                        autzSettingData.type = 'user'
+                        autzSettingData.settingFor = tempData.id
+                        let menusList = []
+                        that.datasLeft.forEach(function(obj) {
+                            let menus = {}
+                            if (obj['menu']) {
+                                Object.keys(obj).forEach(function(key) {
+                                    if (key != 'parent' && key != 'children' && key != 'menu') {
+                                        menus[key] = obj[key]
+                                    }
+                                    if (!obj['menuId']) {
+                                        menus.menuId = obj.menu.id
+                                    }
+                                })
+                                menus.parentId = obj.parentId
+                                menus.id = obj.id
+                            } else {
+                                menus.menuId = obj.id
+                                menus.children = []
+                                menus.parentId = obj.parentId
+                            }
+                            menusList.push(menus)
                         })
-                    })
+                        autzSettingData.menus = buildTree(menusList)
+                        updateAutzSetting(autzSettingData).then(() => {
+                            that.roleVisible = false
+                            that.$notify({
+                                title: '成功',
+                                message: '更新成功',
+                                type: 'success',
+                                duration: 2000
+                            })
+                        })
+                      } else {
+                          return false
+                      }
+                  })
                 },
                 handleSizeChange(val) {
                     this.page = val

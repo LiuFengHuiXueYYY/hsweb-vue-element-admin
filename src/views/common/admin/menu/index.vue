@@ -170,12 +170,12 @@ export default {
                             let menu = ['100%', '90%', '80%', '70%', '60%', '50%', '40%', '30%', '20%', '10%']
                             that.show_div_c.width = menu[menu.indexOf(that.show_div_c.width) + 1]
                             let menus = {}
-                            menus.icon=""
-                            menus.permissionId=""
-                            menus.name=""
-                            menus.url=""
-                            menus.sortIndex=""
-                            menus.describe=""
+                            menus.icon = ""
+                            menus.permissionId = ""
+                            menus.name = ""
+                            menus.url = ""
+                            menus.sortIndex = ""
+                            menus.describe = ""
                             row._expanded = true
                             if (row.id) {
                                 menus.parentId = row.id
@@ -202,26 +202,41 @@ export default {
                     }, {
                         icon: 'icon-quxiao',
                         excFun: function(row, that) {
-                            let f = function(list, row) {
-                                list.forEach(function(val) {
-                                    if (row.id == val.id) {
-                                        list.splice(list.indexOf(row), 1)
-                                        list.push()
-                                    }
-                                    if (val.children) {
-                                        f(val.children, row)
-                                    }
-                                })
-                            }
-                            menuDelete(row).then(() => {
-                                that.$notify({
-                                    title: '成功',
-                                    message: '删除成功',
+                            that.$confirm('此操作将永久删除该目录, 是否继续?', '提示', {
+                                confirmButtonText: '确定',
+                                cancelButtonText: '取消',
+                                type: 'warning'
+                            }).then(() => {
+                              let f = function(list, row) {
+                                  list.forEach(function(val) {
+                                      if (row.id == val.id) {
+                                          list.splice(list.indexOf(row), 1)
+                                          list.push()
+                                      }
+                                      if (val.children) {
+                                          f(val.children, row)
+                                      }
+                                  })
+                              }
+                              menuDelete(row).then(() => {
+                                  that.$notify({
+                                      title: '成功',
+                                      message: '删除成功',
+                                      type: 'success',
+                                      duration: 2000
+                                  })
+                                  f(that.data, row)
+                              })
+                                that.$message({
                                     type: 'success',
-                                    duration: 2000
-                                })
-                                f(that.data, row)
-                            })
+                                    message: '删除成功!'
+                                });
+                            }).catch(() => {
+                                that.$message({
+                                    type: 'info',
+                                    message: '已取消删除'
+                                });
+                            });
                         }
                     }]
                 }]
@@ -305,12 +320,12 @@ export default {
                 handleUpdate() {
                     let that = this
                     let menus = {}
-                    menus.icon=""
-                    menus.permissionId=""
-                    menus.name=""
-                    menus.url=""
-                    menus.sortIndex=""
-                    menus.describe=""
+                    menus.icon = ""
+                    menus.permissionId = ""
+                    menus.name = ""
+                    menus.url = ""
+                    menus.sortIndex = ""
+                    menus.describe = ""
                     menus.parentId = '-1'
                     that.allMenuList.push(menus)
                 },
