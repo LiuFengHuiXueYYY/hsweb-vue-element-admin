@@ -61,7 +61,6 @@ const user = {
             setToken(data.token)
             commit('SET_TOKEN', data.token)
             resolve()
-            window.location.href = '/'
           }).catch(error => {
             reject(error)
           })

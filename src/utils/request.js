@@ -1,14 +1,22 @@
 import axios from 'axios'
-import { Message, MessageBox } from 'element-ui'
+import {
+  Message, MessageBox
+}
+from 'element-ui'
 import store from '../store'
-import { getToken } from '@/utils/auth'
+import {
+  getToken
+}
+from '@/utils/auth'
 
 //axios.defaults.withCredentials = true;
 // 创建axios实例
 const service = axios.create({
   baseURL: process.env.BASE_API, // api的base_url
   timeout: 15000, // 请求超时时间
-  headers: {'X-Custom-Header': 'foobar'}
+  headers: {
+    'X-Custom-Header': 'foobar'
+  }
 })
 
 // request拦截器 post参数统一 data:params get参数统一 params:params
@@ -26,9 +34,9 @@ service.interceptors.request.use(config => {
 // respone拦截器
 service.interceptors.response.use(
   response => {
-  /**
-  * code为非20000是抛错 可结合自己业务进行修改
-  */
+    /**
+     * code为非20000是抛错 可结合自己业务进行修改
+     */
     const res = response.data
     if (res.status !== 200) {
       Message({
@@ -38,14 +46,14 @@ service.interceptors.response.use(
       })
 
       // 50008:非法的token; 50012:其他客户端登录了;  50014:Token 过期了;
-      if (res.code === 415 || res.code === 403 || res.code === 405) {
+      if (res.code === 415 || res.code === 403 || res.code === 401) {
         MessageBox.confirm('你已被登出，可以取消继续留在该页面，或者重新登录', '确定登出', {
           confirmButtonText: '重新登录',
           cancelButtonText: '取消',
           type: 'warning'
         }).then(() => {
           store.dispatch('FedLogOut').then(() => {
-            location.reload()// 为了重新实例化vue-router对象 避免bug
+            location.reload() // 为了重新实例化vue-router对象 避免bug
           })
         })
       }
@@ -55,7 +63,7 @@ service.interceptors.response.use(
     }
   },
   error => {
-    console.log('err' + error)// for debug
+    console.log('err' + error) // for debug
     Message({
       message: error.message,
       type: 'error',
