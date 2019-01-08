@@ -73,7 +73,7 @@
         </el-form>
         <div slot="footer" class="dialog-footer">
             <el-button @click="isShowEditVisible = false">取消</el-button>
-            <el-button type="primary" :loading="listLoading" @click="updateData" class="title1">确定</el-button>
+            <el-button type="primary" :loading="listLoading" @click="updateData('rules_form')" class="title1">确定</el-button>
         </div>
     </el-dialog>
 
@@ -88,7 +88,7 @@
         </el-tabs>
         <div slot="footer" class="dialog-footer">
             <el-button @click="roleVisible = false">取消</el-button>
-            <el-button type="primary" @click="updateAutzSettingData('rules_form')" class="title1">确定</el-button>
+            <el-button type="primary" @click="updateAutzSettingData" class="title1">确定</el-button>
         </div>
     </el-dialog>
 </div>
@@ -390,92 +390,92 @@ export default {
                     }
                 },
                 //修改和新增
-                updateData() {
-                    let that = this
-                    that.temp.status = 1
-                    const tempData = Object.assign({}, that.temp)
-                    tempData.status = 1
-                    let flg = true
-                    this.tableList.forEach(function(val) {
-                        if (val.id == that.temp.id) {
-                            flg = false
-                        }
-                    })
-                    urlUpdate(this, tempData)
-                    if (flg) {
-                        roleAdd(tempData).then(() => {
-                            that.tableList.push(that.temp)
-                            that.total += 1
-                            that.isShowEditVisible = false
-                            that.$notify({
-                                title: '成功',
-                                message: '新增成功',
-                                type: 'success',
-                                duration: 2000
-                            })
-                        })
-                    } else {
-                        roleUpdate(tempData).then(() => {
-                            for (const v of that.tableList) {
-                                if (v.id === that.temp.id) {
-                                    const index = that.tableList.indexOf(v)
-                                    that.tableList.splice(index, 1, that.temp)
-                                    break
-                                }
-                            }
-                            that.isShowEditVisible = false
-                            that.$notify({
-                                title: '成功',
-                                message: '更新成功',
-                                type: 'success',
-                                duration: 2000
-                            })
-                        })
-                    }
-                },
-                updateAutzSettingData(rules_form) {
+                updateData(rules_form) {
                   this.$refs[rules_form].validate((valid) => {
                       if (valid) {
                         let that = this
+                        that.temp.status = 1
                         const tempData = Object.assign({}, that.temp)
-                        let autzSettingData = {}
-                        autzSettingData.type = 'role'
-                        autzSettingData.settingFor = tempData.id
-                        let menusList = []
-                        that.datasLeft.forEach(function(obj) {
-                            let menus = {}
-                            if (obj['menu']) {
-                                Object.keys(obj).forEach(function(key) {
-                                    if (key != 'parent' && key != 'children' && key != 'menu') {
-                                        menus[key] = obj[key]
-                                    }
-                                    if (!obj['menuId']) {
-                                        menus.menuId = obj.menu.id
-                                    }
-                                })
-                                menus.parentId = obj.parentId
-                                menus.id = obj.id
-                            } else {
-                                menus.menuId = obj.id
-                                menus.children = []
-                                menus.parentId = obj.parentId
+                        tempData.status = 1
+                        let flg = true
+                        this.tableList.forEach(function(val) {
+                            if (val.id == that.temp.id) {
+                                flg = false
                             }
-                            menusList.push(menus)
                         })
-                        autzSettingData.menus = buildTree(menusList)
-                        updateAutzSetting(autzSettingData).then(() => {
-
-                            that.roleVisible = false
-                            that.$notify({
-                                title: '成功',
-                                message: '更新成功',
-                                type: 'success',
-                                duration: 2000
+                        urlUpdate(this, tempData)
+                        if (flg) {
+                            roleAdd(tempData).then(() => {
+                                that.tableList.push(that.temp)
+                                that.total += 1
+                                that.isShowEditVisible = false
+                                that.$notify({
+                                    title: '成功',
+                                    message: '新增成功',
+                                    type: 'success',
+                                    duration: 2000
+                                })
                             })
-                        })
+                        } else {
+                            roleUpdate(tempData).then(() => {
+                                for (const v of that.tableList) {
+                                    if (v.id === that.temp.id) {
+                                        const index = that.tableList.indexOf(v)
+                                        that.tableList.splice(index, 1, that.temp)
+                                        break
+                                    }
+                                }
+                                that.isShowEditVisible = false
+                                that.$notify({
+                                    title: '成功',
+                                    message: '更新成功',
+                                    type: 'success',
+                                    duration: 2000
+                                })
+                            })
+                        }
                       } else {
                           return false
                       }
+                  })
+                },
+                updateAutzSettingData(rules_form) {
+                  let that = this
+                  const tempData = Object.assign({}, that.temp)
+                  let autzSettingData = {}
+                  autzSettingData.type = 'role'
+                  autzSettingData.settingFor = tempData.id
+                  let menusList = []
+                  that.datasLeft.forEach(function(obj) {
+                      let menus = {}
+                      if (obj['menu']) {
+                          Object.keys(obj).forEach(function(key) {
+                              if (key != 'parent' && key != 'children' && key != 'menu') {
+                                  menus[key] = obj[key]
+                              }
+                              if (!obj['menuId']) {
+                                  menus.menuId = obj.menu.id
+                              }
+                          })
+                          menus.parentId = obj.parentId
+                          menus.id = obj.id
+                      } else {
+                          menus.menuId = obj.id
+                          menus.children = []
+                          menus.parentId = obj.parentId
+                      }
+                      menusList.push(menus)
+                  })
+                  autzSettingData.menus = buildTree(menusList)
+                  updateAutzSetting(autzSettingData).then(() => {
+
+                      that.roleVisible = false
+                      that.$notify({
+                          title: '成功',
+                          message: '更新成功',
+                          type: 'success',
+                          duration: 2000
+                      })
                   })
                 },
                 handleSizeChange(val) {
