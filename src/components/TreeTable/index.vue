@@ -10,7 +10,7 @@
         {{ scope.$index }}
       </template>
     </el-table-column>
-    <el-table-column class="table_box" show-overflow-tooltip v-for="(column, index) in columns" v-else :key="column.value" :label="column.text" :width="column.width">
+    <el-table-column class="table_box" show-overflow-tooltip v-for="(column, index) in columns" v-else :key="column.value" :label="column.text" :min-width="column.width + '%'">
       <template slot-scope="scope">
         <div v-if="column.value == 'indexes'"><span>{{ scope.$index + 1}}</span></div>
         <div v-if="column.value == 'editBtn'" >

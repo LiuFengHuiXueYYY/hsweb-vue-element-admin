@@ -6,6 +6,12 @@ export function permissionList(params) {
     params: params
   })
 }
+export function permissionAll() {
+  return request({
+    url: '/permission?paging=false',
+    method: 'get'
+  })
+}
 
 export function permissionAdd(params) {
   return request({

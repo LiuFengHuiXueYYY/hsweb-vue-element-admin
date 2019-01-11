@@ -167,6 +167,7 @@ if (getToken()) {
     cacheStore._modules.root._children.permission.state.menuUserTree =
       result
     let cacheRouter = new Router({
+      //mode: 'history',
       scrollBehavior: () => ({
         y: 0
       }),

@@ -84,7 +84,36 @@
                 <Transfer :columnsLeft="columnsLeft" :columnsRight="columnsRight" :datasLeftTmp="datasLeft" :datasRightTmp="datasRight" :showIncoIndex=1 :showIndentIndex=1>
                 </Transfer>
             </el-tab-pane>
-            <el-tab-pane label="权限设置">配置管理</el-tab-pane>
+            <el-tab-pane label="权限设置">
+              <el-row :gutter="24">
+                  <el-col :span="12">
+                    <Split style="margin-bottom:10px;" title="搜索"></Split>
+                    <el-input
+                      placeholder="输入关键字进行过滤"
+                      v-model="filterText">
+                    </el-input>
+                    <div style="height:10px;width:100%;"></div>
+                    <Split style="margin-bottom:10px;" title="权限信息"></Split>
+                    <el-tree
+                      :data="data2"
+                      show-checkbox
+                      node-key="id"
+                      :props="defaultProps">
+                    </el-tree>
+                  </el-col>
+                  <el-col :span="4">
+                  </el-col>
+                  <el-col :span="12">
+                    <Split style="margin-bottom:10px;" title="数据权限设置"></Split>
+                    <el-button>应用到所有操作</el-button>
+                  </el-col>
+              </el-row>
+              <div>
+
+              </div>
+              <div>
+              </div>
+            </el-tab-pane>
         </el-tabs>
         <div slot="footer" class="dialog-footer">
             <el-button @click="roleVisible = false">取消</el-button>
@@ -132,11 +161,51 @@ from '@/utils/common/treeUtil'
 import {
     patterns
 }
-from '@/utils/common/patterns'//正则统一管理
+from '@/utils/common/patterns' //正则统一管理
 let circularJson = require('circular-json');
 export default {
     data() {
             return {
+                filterText: '',
+                data2: [{
+                    id: 1,
+                    label: '一级 1',
+                    children: [{
+                        id: 4,
+                        label: '二级 1-1',
+                        children: [{
+                            id: 9,
+                            label: '三级 1-1-1'
+                        }, {
+                            id: 10,
+                            label: '三级 1-1-2'
+                        }]
+                    }]
+                }, {
+                    id: 2,
+                    label: '一级 2',
+                    children: [{
+                        id: 5,
+                        label: '二级 2-1'
+                    }, {
+                        id: 6,
+                        label: '二级 2-2'
+                    }]
+                }, {
+                    id: 3,
+                    label: '一级 3',
+                    children: [{
+                        id: 7,
+                        label: '二级 3-1'
+                    }, {
+                        id: 8,
+                        label: '二级 3-2'
+                    }]
+                }],
+                defaultProps: {
+                    children: 'children',
+                    label: 'label'
+                },
                 token: getToken(),
                 uploadUrl: process.env.BASE_API + '/file/upload?token=' + getToken(),
                 downloadBaseUrl: process.env.BASE_API + '/file/download/',
@@ -207,19 +276,19 @@ export default {
                 columnsLeft: [{
                     text: '序号',
                     value: 'indexes',
-                    width: 50
+                    width: 15
                 }, {
                     text: '图标',
                     value: 'icon',
-                    width: 100
+                    width: 25
                 }, {
                     text: '菜单名称',
                     value: 'name',
-                    width: 120
+                    width: 35
                 }, {
                     text: '操作',
                     value: 'editBtn',
-                    width: 50,
+                    width: 25,
                     button: [{
                         icon: 'icon-quxiao'
                     }]
@@ -227,22 +296,22 @@ export default {
                 columnsRight: [{
                     text: '操作',
                     value: 'editBtn',
-                    width: 50,
+                    width: 15,
                     button: [{
                         icon: 'icon-quxiao'
                     }]
                 }, {
                     text: '图标',
                     value: 'icon',
-                    width: 100
+                    width: 25
                 }, {
                     text: '菜单名称',
                     value: 'name',
-                    width: 120
+                    width: 35
                 }, {
                     text: '描述',
                     value: 'describe',
-                    width: 100
+                    width: 25
                 }]
             }
         },
@@ -254,7 +323,9 @@ export default {
         },
         //此方法在于监听字段变化
         watch: {
-
+          filterText(val) {
+            this.$refs.tree2.filter(val);
+          }
         },
         //此方法在于需要计算的属性
         computed: {},
@@ -274,8 +345,12 @@ export default {
             Transfer
         },
         methods: {
-            //上传地址
-            upload() {
+            filterNode(value, data) {
+                    if (!value) return true;
+                    return data.label.indexOf(value) !== -1;
+                },
+                //上传地址
+                upload() {
                     return this.uploadUrl
                 },
                 changeFun(val) {
@@ -296,6 +371,7 @@ export default {
                     autzsetting('', 'role', uid).then(response => {
                         if (response.result) {
                             let menus = response.result.menus
+                            console.log(response.result)
                             for (let l of menus) {
                                 let item = that.allMenuMap[l.menuId]
                                 l.menu = item
@@ -369,7 +445,7 @@ export default {
                 //编辑按钮
                 handleUpdate(scope) {
                     let row
-                    if(scope) row = this.tableList[scope.$index]
+                    if (scope) row = this.tableList[scope.$index]
                     this.isShowEditVisible = true
                     this.imgShow(row)
                 },
@@ -391,92 +467,92 @@ export default {
                 },
                 //修改和新增
                 updateData(rules_form) {
-                  this.$refs[rules_form].validate((valid) => {
-                      if (valid) {
-                        let that = this
-                        that.temp.status = 1
-                        const tempData = Object.assign({}, that.temp)
-                        tempData.status = 1
-                        let flg = true
-                        this.tableList.forEach(function(val) {
-                            if (val.id == that.temp.id) {
-                                flg = false
-                            }
-                        })
-                        urlUpdate(this, tempData)
-                        if (flg) {
-                            roleAdd(tempData).then(() => {
-                                that.tableList.push(that.temp)
-                                that.total += 1
-                                that.isShowEditVisible = false
-                                that.$notify({
-                                    title: '成功',
-                                    message: '新增成功',
-                                    type: 'success',
-                                    duration: 2000
-                                })
-                            })
-                        } else {
-                            roleUpdate(tempData).then(() => {
-                                for (const v of that.tableList) {
-                                    if (v.id === that.temp.id) {
-                                        const index = that.tableList.indexOf(v)
-                                        that.tableList.splice(index, 1, that.temp)
-                                        break
-                                    }
+                    this.$refs[rules_form].validate((valid) => {
+                        if (valid) {
+                            let that = this
+                            that.temp.status = 1
+                            const tempData = Object.assign({}, that.temp)
+                            tempData.status = 1
+                            let flg = true
+                            this.tableList.forEach(function(val) {
+                                if (val.id == that.temp.id) {
+                                    flg = false
                                 }
-                                that.isShowEditVisible = false
-                                that.$notify({
-                                    title: '成功',
-                                    message: '更新成功',
-                                    type: 'success',
-                                    duration: 2000
-                                })
                             })
+                            urlUpdate(this, tempData)
+                            if (flg) {
+                                roleAdd(tempData).then(() => {
+                                    that.tableList.push(that.temp)
+                                    that.total += 1
+                                    that.isShowEditVisible = false
+                                    that.$notify({
+                                        title: '成功',
+                                        message: '新增成功',
+                                        type: 'success',
+                                        duration: 2000
+                                    })
+                                })
+                            } else {
+                                roleUpdate(tempData).then(() => {
+                                    for (const v of that.tableList) {
+                                        if (v.id === that.temp.id) {
+                                            const index = that.tableList.indexOf(v)
+                                            that.tableList.splice(index, 1, that.temp)
+                                            break
+                                        }
+                                    }
+                                    that.isShowEditVisible = false
+                                    that.$notify({
+                                        title: '成功',
+                                        message: '更新成功',
+                                        type: 'success',
+                                        duration: 2000
+                                    })
+                                })
+                            }
+                        } else {
+                            return false
                         }
-                      } else {
-                          return false
-                      }
-                  })
+                    })
                 },
                 updateAutzSettingData(rules_form) {
-                  let that = this
-                  const tempData = Object.assign({}, that.temp)
-                  let autzSettingData = {}
-                  autzSettingData.type = 'role'
-                  autzSettingData.settingFor = tempData.id
-                  let menusList = []
-                  that.datasLeft.forEach(function(obj) {
-                      let menus = {}
-                      if (obj['menu']) {
-                          Object.keys(obj).forEach(function(key) {
-                              if (key != 'parent' && key != 'children' && key != 'menu') {
-                                  menus[key] = obj[key]
-                              }
-                              if (!obj['menuId']) {
-                                  menus.menuId = obj.menu.id
-                              }
-                          })
-                          menus.parentId = obj.parentId
-                          menus.id = obj.id
-                      } else {
-                          menus.menuId = obj.id
-                          menus.children = []
-                          menus.parentId = obj.parentId
-                      }
-                      menusList.push(menus)
-                  })
-                  autzSettingData.menus = buildTree(menusList)
-                  updateAutzSetting(autzSettingData).then(() => {
+                    let that = this
+                    const tempData = Object.assign({}, that.temp)
+                    let autzSettingData = {}
+                    autzSettingData.type = 'role'
+                    autzSettingData.settingFor = tempData.id
+                    let menusList = []
+                    that.datasLeft.forEach(function(obj) {
+                        let menus = {}
+                        if (obj['menu']) {
+                            Object.keys(obj).forEach(function(key) {
+                                if (key != 'parent' && key != 'children' && key != 'menu') {
+                                    menus[key] = obj[key]
+                                }
+                                if (!obj['menuId']) {
+                                    menus.menuId = obj.menu.id
+                                }
+                            })
+                            menus.parentId = obj.parentId
+                            menus.id = obj.id
+                        } else {
+                            menus.menuId = obj.id
+                            menus.children = []
+                            menus.parentId = obj.parentId
+                        }
+                        menusList.push(menus)
+                    })
+                    autzSettingData.menus = buildTree(menusList)
+                    updateAutzSetting(autzSettingData).then(() => {
 
-                      that.roleVisible = false
-                      that.$notify({
-                          title: '成功',
-                          message: '更新成功',
-                          type: 'success',
-                          duration: 2000
-                      })
-                  })
+                        that.roleVisible = false
+                        that.$notify({
+                            title: '成功',
+                            message: '更新成功',
+                            type: 'success',
+                            duration: 2000
+                        })
+                    })
                 },
                 handleSizeChange(val) {
                     this.page = val
