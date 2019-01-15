@@ -4,7 +4,7 @@ export function menuTree(params) {
   return request({
     url: '/menu?paging=false',
     method: 'get',
-    params:params
+    params: params
   })
 }
 export function menuDelete(params) {
@@ -17,7 +17,7 @@ export function menuUserTree(params) {
   return request({
     url: '/menu/user-own/tree',
     method: 'get',
-    params:params
+    params: params
   })
 }
 export function menuAddOrUpdate(row) {
@@ -25,17 +25,17 @@ export function menuAddOrUpdate(row) {
   return request({
     url: '/menu',
     method: 'PATCH',
-    data:params
+    data: params
   })
 }
 
-function rowToObj(row){
+function rowToObj(row) {
   let params = {}
   let menu
-  if(row.menu){
+  if (row.menu) {
     menu = row.menu
-    //params.children = menu.children
-  }else{
+      //params.children = menu.children
+  } else {
     menu = row
   }
   params.name = menu.name
@@ -46,9 +46,10 @@ function rowToObj(row){
   params.icon = menu.icon
   params.status = menu.status
   params.parentId = menu.parentId
-  if(row.children){
+  params.sortIndex = menu.sortIndex
+  if (row.children) {
     params.children = []
-    row.children.forEach(function(val){
+    row.children.forEach(function(val) {
       params.children.push(rowToObj(val))
     })
   }

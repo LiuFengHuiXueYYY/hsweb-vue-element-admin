@@ -297,7 +297,7 @@ export default {
                 //列表加载
                 fetchData() {
                     if (this.searchKey == '') {
-                        this.listQuery = createQueryDSL().getParams()
+                        this.listQuery = createQueryDSL().orderByAsc("sort_index").getParams()
                     } else {
                         this.listQuery = createQueryDSL().like('name', '%' + this.searchKey + '%').like('username', '%' + this.searchUserName + '%').getParams()
                     }

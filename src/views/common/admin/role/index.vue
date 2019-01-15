@@ -230,7 +230,7 @@ export default {
                 listRoleQuery: {},
                 allMenuMap: {},
                 allMenuList: [],
-                permissionMap: [],
+                permissionMap: {},
                 columnsLeft: [{
                     text: '序号',
                     value: 'indexes',
@@ -291,13 +291,26 @@ export default {
         },
         //此方法在于监听字段变化
         watch: {
-            datasLeft(){
-              let that = this
-              if (that.current_pane == 1) {
+          datasLeft(){
+            let that = this
+            if(JSON.stringify(that.permissionMap)=="{}"){
+              permissionAll().then(res => {
+                  let permissionList = res.result.data
+                  permissionList.forEach(function(val) {
+                      that.permissionMap[val.id] = val
+                  })
+                  that.oldDetails = that.initPermissionData([])
+                  that.newDetails = that.oldDetails
                   that.initPermissionTabActive();
                   that.saveDataAccess();
-              }
+              })
+            }else{
+              that.oldDetails = that.initPermissionData([])
+              that.newDetails = that.oldDetails
+              that.initPermissionTabActive();
+              that.saveDataAccess();
             }
+          }
         },
         //此方法在于需要计算的属性
         computed: {},
@@ -343,14 +356,19 @@ export default {
                     autzsetting('', 'role', uid).then(response => {
                         if (response.result) {
                             let menus = response.result.menus
-                            permissionAll().then(res => {
-                                let permissionList = res.result.data
-                                permissionList.forEach(function(val) {
-                                    that.permissionMap[val.id] = val
-                                })
-                                that.oldDetails = that.initPermissionData(response.result.details)
-                                that.newDetails = that.oldDetails
-                            })
+                            if(JSON.stringify(that.permissionMap)=="{}"){
+                              permissionAll().then(res => {
+                                  let permissionList = res.result.data
+                                  permissionList.forEach(function(val) {
+                                      that.permissionMap[val.id] = val
+                                  })
+                                  that.oldDetails = that.initPermissionData(response.result.details)
+                                  that.newDetails = that.oldDetails
+                              })
+                            }else{
+                              that.oldDetails = that.initPermissionData(response.result.details)
+                              that.newDetails = that.oldDetails
+                            }
                             for (let l of menus) {
                                 let item = that.allMenuMap[l.menuId]
                                 l.menu = item
@@ -522,6 +540,7 @@ export default {
                         menusList.push(menus)
                     })
                     autzSettingData.menus = buildTree(menusList)
+                    autzSettingData.details = that.getPermissionData(true, 10)
                     updateAutzSetting(autzSettingData).then(() => {
 
                         that.roleVisible = false
