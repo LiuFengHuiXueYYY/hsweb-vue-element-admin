@@ -111,7 +111,7 @@
                         </el-input>
                         <div style="height:10px;width:100%;"></div>
                         <Split style="margin-bottom:10px;" title="权限信息"></Split>
-                        <el-tree :default-checked-keys="defaultChecks" :data="details" show-checkbox node-key="id" :props="defaultProps">
+                        <el-tree ref="tree" :default-checked-keys="defaultChecks" :data="newDetails" show-checkbox node-key="id" :props="defaultProps">
                         </el-tree>
                     </el-col>
                     <el-col :span="4">
@@ -202,7 +202,6 @@ export default {
                         trigger: 'blur'
                     }]
                 },
-                current_pane: "0",
                 tableList: [],
                 roleTableList: [],
                 //所有图片字段
@@ -224,6 +223,7 @@ export default {
                     value: 3,
                     label: '银行'
                 }],
+                defMenu: 'm1',
                 listLoading: true,
                 listRoleLoading: true,
                 isShowEditVisible: false,
@@ -299,7 +299,10 @@ export default {
                     label: 'label'
                 },
                 details: [],
-                defaultChecks: []
+                defaultChecks: [],
+                oldDetails: [],
+                newDetails: [],
+                current_pane: 0
             }
         },
         //生命周期
@@ -310,7 +313,13 @@ export default {
         },
         //此方法在于监听字段变化
         watch: {
-
+          datasLeft(){
+            let that = this
+            if (that.current_pane == 1) {
+                that.initPermissionTabActive();
+                that.saveDataAccess();
+            }
+          }
         },
         //此方法在于需要计算的属性
         computed: {},
@@ -352,15 +361,14 @@ export default {
                     autzsetting('', 'user', uid).then(response => {
                         if (response.result) {
                             let menus = response.result.menus
-                            if(response.result.details && response.result.details.length > 0){
-                              permissionAll().then(res => {
-                                  let permissionList = res.result.data
-                                  permissionList.forEach(function(val) {
-                                      that.permissionMap[val.id] = val
-                                  })
-                                  that.details = that.initPermissionData(response.result.details)
-                              })
-                            }
+                            permissionAll().then(res => {
+                                let permissionList = res.result.data
+                                permissionList.forEach(function(val) {
+                                    that.permissionMap[val.id] = val
+                                })
+                                that.oldDetails = that.initPermissionData(response.result.details)
+                                that.newDetails = that.oldDetails
+                            })
                             for (let l of menus) {
                                 let item = that.allMenuMap[l.menuId]
                                 l.menu = item
@@ -585,64 +593,28 @@ export default {
                     this.page = val
                     this.fetchData()
                 },
-                getSelectMenuPermission() {
-                    let that = this
-                    let permissions = []
-                    that.datasLeft.forEach(function(val) {
-                        let permission
-                        let menuPer = val.menu.permissionId
-                        if (menuPer && menuPer != "") {
-                            menuPer = menuPer.split(",")
-                        } else {
-                            menuPer = []
-                        }
-                        if (val.menu) {
-                            menuPer.forEach(function(val) {
-                                if (permission = that.permissionMap[val])
-                                    permissions.push(permission)
-                            });
-                        }
-                    })
-                    return permissions
-                },
                 //tab点击切换
                 handleClick(e) {
                     let that = this
                     that.current_pane = e.paneName
                     if (e.paneName == 1) {
-                        if (that.permissionMap || that.permissionMap.length <= 0) {
-                            permissionAll().then(response => {
-                                let permissionList = response.result.data
-                                permissionList.forEach(function(val) {
-                                    that.permissionMap[val.id] = val
-                                })
-                                that.getPermissions()
-                            })
-                        } else {
-                            that.getPermissions()
-                        }
+                        that.initPermissionTabActive();
+                        that.saveDataAccess();
                     }
-                },
-                getPermissions() {
-                    this.initPermissionTabActive()
                 },
                 initPermissionTabActive() {
                     let that = this
-                    if(that.details && that.details.length > 0){
-                      that.details.push()
-                      return that.details
-                    }
                     that.defaultChecks = []
                     let menuPermissions = that.getSelectMenuPermission();
                     let list = [];
-                    let tmp = [];
-                    let old = [];
+                    let tmp = []
+                    let old = that.getPermissionData();
                     let dataMap = {};
-                    old.forEach(function(val) {
-                        dataMap[val.permissionId] = val;
-                        let dataAccessesMap = val.dataAccessesMap = {};
-                        $(val.dataAccesses).each(function() {
-                            dataAccessesMap[val.action + val.type] = val;
+                    old.forEach(function(v) {
+                        dataMap[v.permissionId] = v;
+                        let dataAccessesMap = v.dataAccessesMap = {};
+                        v.dataAccesses.forEach(function(v1) {
+                            dataAccessesMap[v1.action + v1.type] = v1;
                         });
                     });
 
@@ -654,7 +626,7 @@ export default {
                             if (!(oldPer.actions.indexOf(action) > -1)) return false;
                             let dataAccess = oldPer.dataAccessesMap[action + "DENY_FIELDS"];
                             if (dataAccess) {
-                                return false;
+                                return !(JSON.parse(dataAccess.config).fields.indexOf(field) > -1);
                             } else {
                                 return true;
                             }
@@ -662,89 +634,109 @@ export default {
                         return false;
                     }
 
-                    menuPermissions.forEach(function(val) {
-                        if (tmp.indexOf(val.id) !== -1) return;
+                    menuPermissions.forEach(function(v) {
+                        if (tmp.indexOf(v.id) !== -1) return;
                         let actions = [];
-                        let permission = val;
-                        let optionalFields = val.optionalFields;
+                        let permission = v;
+                        let optionalFields = v.optionalFields;
                         let oldPer = dataMap[permission.id];
 
-                        val.actions.forEach(function(v) {
-                            let action = v;
+                        v.actions.forEach(function(v1) {
+                            let action = v1;
                             let fields = [];
                             let dataAccesses = [];
                             if (oldPer && oldPer.dataAccesses) {
-                                oldPer.dataAccesses.forEach(function(ov) {
-                                    if (ov.type == "DENY_FIELDS") return;
-                                    if (ov.action == action.action)
-                                        dataAccesses.push(ov);
+                                oldPer.dataAccesses.forEach(function(v2) {
+                                    if (v2.type == "DENY_FIELDS") return;
+                                    if (v2.action == action.action)
+                                        dataAccesses.push(v2);
                                 });
                             }
-                            optionalFields.forEach(function(ofv) {
-                                let fieldChecked = isChecked(permission.id, action.action, ofv.name);
-                                let ofvId = val.id + "-" + v.action + "-" + ofv.name
+                            optionalFields.forEach(function(v2) {
+                                let fieldChecked = isChecked(permission.id, action.action, v2.name);
+                                that.defaultChecks.push(that.generatorId(v, v1, v2))
                                 fields.push({
-                                    id: ofvId,
+                                    id: that.generatorId(v, v1, v2),
                                     type: "fields",
                                     checked: fieldChecked,
-                                    field: ofv.name,
-                                    label: ofv.describe ? ofv.describe : ofv.name
+                                    field: v2.name,
+                                    label: v2.describe ? v2.describe : v2.name
                                 });
-                                that.defaultChecks.push(ofvId)
                             });
-                            let vId = val.id + "-" + v.action
                             let actionData = {
-                                id: vId,
+                                id: that.generatorId(v, v1),
                                 type: "action",
-                                action: v.action,
-                                label: v.describe ? v.describe : v.action,
+                                action: v1.action,
+                                label: v1.describe ? v1.describe : v1.action,
                                 children: Object.assign([], fields),
-                                dataAccesses: dataAccesses,
-                                defaultCheck: v.defaultCheck
+                                dataAccesses: dataAccesses
                             };
-                            if (v.defaultCheck) {
-                                that.defaultChecks.push(vId)
-                            }
-                            if (fields.length == 0 && oldPer && oldPer.actions.indexOf(v.action) != -1) {
+                            if (fields.length == 0 && oldPer && oldPer.actions.indexOf(v1.action) != -1) {
                                 actionData.checked = true;
+                            }
+                            if (actionData.checked) {
+                                that.defaultChecks.push(that.generatorId(v, v1))
+                            }
+                            if (!oldPer && v1.defaultCheck) {
+                                that.defaultChecks.push(that.generatorId(v, v1))
                             }
                             actions.push(actionData);
                         });
                         list.push({
-                            id: val.id,
-                            permission: val,
-                            permissionId: val.id,
-                            label: val.name,
-                            children: actions,
-                            defaultCheck: val.defaultCheck
+                            id: that.generatorId(v),
+                            permission: v,
+                            permissionId: v.id,
+                            label: v.name,
+                            children: actions
                         });
-                        if (val.defaultCheck) {
-                            that.defaultChecks.push(val.id)
-                        }
-                        tmp.push(val.id);
+                        tmp.push(v.id);
                     });
-                    that.details = list
+                    that.newDetails = list
+                },
+                getSelectMenuPermission() {
+                    let that = this
+                    let permissions = [];
+                    that.datasLeft.forEach(function(v) {
+                        let permission, menuPer
+                        if (v.menu) {
+                            menuPer = v.menu.permissionId
+                        } else {
+                            menuPer = v.permissionId
+                        }
+
+                        if (menuPer && menuPer.length > 0) {
+                            menuPer = menuPer.split(",")
+                        } else {
+                            menuPer = []
+                        }
+                        menuPer.forEach(function(v1) {
+                            if (permission = that.permissionMap[v1])
+                                permissions.push(permission);
+                        });
+                    });
+                    return Object.assign([], permissions)
                 },
                 getPermissionData(merge, priority) {
                     let that = this
                     let list = [];
-                    that.details.forEach(function(val) {
+                    console.log(that.$refs.tree.getCheckedKeys().includes("file-static"))
+                    that.$refs.tree.data.forEach(function(v) {
                         let actions = [];
                         let dataAccesses = {};
-                        val.children.forEach(function(cval) {
-                            let action = cval;
+                        v.children.forEach(function(v1) {
+                            let action = v1;
                             if (action.dataAccesses) {
-                                action.dataAccesses.forEach(function(aval) {
-                                    dataAccesses[aval.action + aval.type] = aval;
+                                action.dataAccesses.forEach(function(v2) {
+                                    dataAccesses[v2.action + v2.type] = v2;
                                 });
                             }
                             if (action.children) {
                                 let denyField = [];
-                                action.children.forEach(function(aval) {
-                                    if (!aval.checked)
-                                        denyField.push(aval.field);
+                                action.children.forEach(function(v2) {
+                                    if (!v2.checked)
+                                        denyField.push(v2.field);
                                 });
-                                if (denyField.length === action.children.length && !action.checked) {
+                                if (denyField.length === action.children.length && !that.$refs.tree.getCheckedKeys().includes(that.generatorId(v, action))) {
                                     return;
                                 }
                                 //没有全部进行勾选,则进行deny操作
@@ -753,7 +745,7 @@ export default {
                                         action: action.action,
                                         type: "DENY_FIELDS",
                                         describe: "不能操作字段",
-                                        config: mini.encode({
+                                        config: JSON.stringify({
                                             fields: denyField
                                         })
                                     };
@@ -763,12 +755,12 @@ export default {
                             actions.push(action.action);
                         });
                         //设置
-                        if (val.dataAccesses) {
-                            val.dataAccesses.forEach(function(dval) {
-                                let dataAccess = dval;
-                                actions.forEach(function(aval) {
-                                    if (!dataAccesses[aval.action + dataAccess.type]) {
-                                        dataAccesses[aval.action + dataAccess.type] = dataAccess;
+                        if (v.dataAccesses) {
+                            v.dataAccesses.forEach(function(v1) {
+                                let dataAccess = v1;
+                                actions.forEach(function(v2) {
+                                    if (!dataAccesses[v2.action + dataAccess.type]) {
+                                        dataAccesses[v2.action + dataAccess.type] = dataAccess;
                                     }
                                 })
                             })
@@ -779,7 +771,8 @@ export default {
                         }
                         //create data access
                         list.push({
-                            permissionId: val.permissionId,
+                            id: that.generatorId(v),
+                            permissionId: v.permissionId,
                             actions: actions,
                             dataAccesses: tmp,
                             merge: merge,
@@ -790,29 +783,32 @@ export default {
                 },
                 initPermissionData(details) {
                     let that = this
+                    that.defaultChecks = []
                     if (details) {
-                        var list = [];
-                        details.forEach(function(val) {
-                            var permission = that.permissionMap[val.permissionId];
-                            var optionalFields = permission.optionalFields;
-                            var actions = [];
-                            var detail = Object.assign({}, val);
+                        let list = [];
+                        details.forEach(function(v) {
+                            let permission = that.permissionMap[v.permissionId];
+                            let optionalFields = permission.optionalFields;
+                            let actions = [];
+                            let detail = Object.assign({}, v)
 
                             permission.actionMap = {};
-                            permission.actions.forEach(function(v) {
-                                permission.actionMap[v.action] = v;
+                            permission.actions.forEach(function(v1) {
+                                permission.actionMap[v1.action] = v1;
                             });
                             detail.dataAccessesMap = {};
-                            detail.dataAccesses.forEach(function(v) {
-                                detail.dataAccessesMap[v.action + v.type] = v;
-                            });
+                            if (detail.dataAccesses) {
+                                detail.dataAccesses.forEach(function(v1) {
+                                    detail.dataAccessesMap[v1.action + v1.type] = v1;
+                                });
+                            }
 
                             function isChecked(action, field) {
-                                if (detail.actions.indexOf(action) == -1) return false;
+                                if (detail.actions && detail.actions.indexOf(action) == -1) return false;
                                 if (field) {
-                                    var dataAccess = detail.dataAccessesMap[action + "DENY_FIELDS"];
+                                    let dataAccess = detail.dataAccessesMap[action + "DENY_FIELDS"];
                                     if (dataAccess) {
-                                        return false;
+                                        return !(JSON.parse(dataAccess.config).fields.indexOf(field) > -1);
                                     } else {
                                         return true;
                                     }
@@ -820,47 +816,62 @@ export default {
                                 return true;
                             }
 
-                            permission.actions.forEach(function(v) {
-                                var action = v;
-                                var fields = [];
-                                var dataAccesses = [];
+                            permission.actions.forEach(function(v1) {
+                                let action = v1;
+                                let fields = [];
+                                let dataAccesses = [];
                                 if (detail.dataAccesses) {
-                                    detail.dataAccesses.forEach(function(dv) {
-                                        if (dv.type == "DENY_FIELDS") return;
-                                        if (dv.action == action.action)
-                                            dataAccesses.push(dv);
+                                    detail.dataAccesses.forEach(function(v2) {
+                                        if (v2.type == "DENY_FIELDS") return;
+                                        if (v2.action == action.action)
+                                            dataAccesses.push(v2);
                                     });
                                 }
-                                optionalFields.forEach(function(ov) {
-                                    var fieldChecked = isChecked(action.action, ov.name);
+                                optionalFields.forEach(function(v2) {
+                                    let fieldChecked = isChecked(action.action, v2.name);
+                                    if (fieldChecked) {
+                                        that.defaultChecks.push(that.generatorId(v, v1, v2))
+                                    }
                                     fields.push({
+                                        id: that.generatorId(v, v1, v2),
                                         type: "fields",
                                         checked: fieldChecked,
-                                        field: ov.name,
-                                        label: ov.describe ? ov.describe : ov.name
+                                        field: v2.name,
+                                        label: v2.describe ? v2.describe : v2.name
                                     });
                                 });
-                                var actionData = {
+                                let actionData = {
+                                    id: that.generatorId(v, v1),
                                     type: "action",
-                                    action: v.action,
-                                    label: v.describe ? v.describe : v.action,
+                                    action: v1.action,
+                                    label: v1.describe ? v1.describe : v1.action,
                                     children: Object.assign([], fields),
                                     dataAccesses: dataAccesses
                                 };
-                                if (fields.length == 0 && detail.actions.indexOf(v.action) != -1) {
+                                if (fields.length == 0 && detail.actions && detail.actions.indexOf(v1.action) != -1) {
                                     actionData.checked = true;
+                                }
+                                if (actionData.checked) {
+                                    that.defaultChecks.push(that.generatorId(v, v1))
                                 }
                                 actions.push(actionData);
                             });
                             list.push({
-                                permission: val,
+                                id: that.generatorId(v),
+                                permission: permission,
                                 permissionId: permission.id,
-                                label: val.name,
+                                label: permission.name,
                                 children: actions
                             });
                         });
-                        return list;
+                        return list
                     }
+                },
+                saveDataAccess() {
+
+                },
+                generatorId(v, v1, v2) {
+                    return (!v ? "" : (!v.id ? "" : v.id)) + (!v1 ? "" : (!v1.action ? "" : "-")) + (!v1 ? "" : (!v1.action ? "" : v1.action)) + (!v2 ? "" : (!v2.name ? "" : "-")) + (!v2 ? "" : (!v2.name ? "" : v2.name))
                 }
         }
 }

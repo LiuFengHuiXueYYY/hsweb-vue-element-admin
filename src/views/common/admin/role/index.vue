@@ -79,40 +79,33 @@
 
     <!-- 详情弹框 -->
     <el-dialog title="" :visible.sync="roleVisible">
-        <el-tabs type="border-card">
+        <el-tabs @tab-click="handleClick" type="border-card">
             <el-tab-pane label="菜单设置">
                 <Transfer :columnsLeft="columnsLeft" :columnsRight="columnsRight" :datasLeftTmp="datasLeft" :datasRightTmp="datasRight" :showIncoIndex=1 :showIndentIndex=1>
                 </Transfer>
             </el-tab-pane>
             <el-tab-pane label="权限设置">
-              <el-row :gutter="24">
-                  <el-col :span="12">
-                    <Split style="margin-bottom:10px;" title="搜索"></Split>
-                    <el-input
-                      placeholder="输入关键字进行过滤"
-                      v-model="filterText">
-                    </el-input>
-                    <div style="height:10px;width:100%;"></div>
-                    <Split style="margin-bottom:10px;" title="权限信息"></Split>
-                    <el-tree
-                      :data="data2"
-                      show-checkbox
-                      node-key="id"
-                      :props="defaultProps">
-                    </el-tree>
-                  </el-col>
-                  <el-col :span="4">
-                  </el-col>
-                  <el-col :span="12">
-                    <Split style="margin-bottom:10px;" title="数据权限设置"></Split>
-                    <el-button>应用到所有操作</el-button>
-                  </el-col>
-              </el-row>
-              <div>
-
-              </div>
-              <div>
-              </div>
+                <el-row :gutter="24">
+                    <el-col :span="12">
+                        <Split style="margin-bottom:10px;" title="搜索"></Split>
+                        <el-input placeholder="输入关键字进行过滤" v-model="filterText">
+                        </el-input>
+                        <div style="height:10px;width:100%;"></div>
+                        <Split style="margin-bottom:10px;" title="权限信息"></Split>
+                        <el-tree ref="tree" :default-checked-keys="defaultChecks" :data="newDetails" show-checkbox node-key="id" :props="defaultProps">
+                        </el-tree>
+                    </el-col>
+                    <el-col :span="4">
+                    </el-col>
+                    <el-col :span="12">
+                        <Split style="margin-bottom:10px;" title="数据权限设置"></Split>
+                        <el-button>应用到所有操作</el-button>
+                    </el-col>
+                </el-row>
+                <div>
+                </div>
+                <div>
+                </div>
             </el-tab-pane>
         </el-tabs>
         <div slot="footer" class="dialog-footer">
@@ -162,50 +155,14 @@ import {
     patterns
 }
 from '@/utils/common/patterns' //正则统一管理
+import {
+    permissionAll
+}
+from '@/api/common/permission'
 let circularJson = require('circular-json');
 export default {
     data() {
             return {
-                filterText: '',
-                data2: [{
-                    id: 1,
-                    label: '一级 1',
-                    children: [{
-                        id: 4,
-                        label: '二级 1-1',
-                        children: [{
-                            id: 9,
-                            label: '三级 1-1-1'
-                        }, {
-                            id: 10,
-                            label: '三级 1-1-2'
-                        }]
-                    }]
-                }, {
-                    id: 2,
-                    label: '一级 2',
-                    children: [{
-                        id: 5,
-                        label: '二级 2-1'
-                    }, {
-                        id: 6,
-                        label: '二级 2-2'
-                    }]
-                }, {
-                    id: 3,
-                    label: '一级 3',
-                    children: [{
-                        id: 7,
-                        label: '二级 3-1'
-                    }, {
-                        id: 8,
-                        label: '二级 3-2'
-                    }]
-                }],
-                defaultProps: {
-                    children: 'children',
-                    label: 'label'
-                },
                 token: getToken(),
                 uploadUrl: process.env.BASE_API + '/file/upload?token=' + getToken(),
                 downloadBaseUrl: process.env.BASE_API + '/file/download/',
@@ -273,6 +230,7 @@ export default {
                 listRoleQuery: {},
                 allMenuMap: {},
                 allMenuList: [],
+                permissionMap: [],
                 columnsLeft: [{
                     text: '序号',
                     value: 'indexes',
@@ -312,7 +270,17 @@ export default {
                     text: '描述',
                     value: 'describe',
                     width: 25
-                }]
+                }],
+                filterText: '',
+                defaultProps: {
+                    children: 'children',
+                    label: 'label'
+                },
+                details: [],
+                defaultChecks: [],
+                oldDetails: [],
+                newDetails: [],
+                current_pane: 0
             }
         },
         //生命周期
@@ -323,9 +291,13 @@ export default {
         },
         //此方法在于监听字段变化
         watch: {
-          filterText(val) {
-            this.$refs.tree2.filter(val);
-          }
+            datasLeft(){
+              let that = this
+              if (that.current_pane == 1) {
+                  that.initPermissionTabActive();
+                  that.saveDataAccess();
+              }
+            }
         },
         //此方法在于需要计算的属性
         computed: {},
@@ -371,7 +343,14 @@ export default {
                     autzsetting('', 'role', uid).then(response => {
                         if (response.result) {
                             let menus = response.result.menus
-                            console.log(response.result)
+                            permissionAll().then(res => {
+                                let permissionList = res.result.data
+                                permissionList.forEach(function(val) {
+                                    that.permissionMap[val.id] = val
+                                })
+                                that.oldDetails = that.initPermissionData(response.result.details)
+                                that.newDetails = that.oldDetails
+                            })
                             for (let l of menus) {
                                 let item = that.allMenuMap[l.menuId]
                                 l.menu = item
@@ -561,6 +540,286 @@ export default {
                 handleCurrentChange(val) {
                     this.page = val
                     this.fetchData()
+                },
+                //tab点击切换
+                handleClick(e) {
+                    let that = this
+                    that.current_pane = e.paneName
+                    if (e.paneName == 1) {
+                        that.initPermissionTabActive();
+                        that.saveDataAccess();
+                    }
+                },
+                initPermissionTabActive() {
+                    let that = this
+                    that.defaultChecks = []
+                    let menuPermissions = that.getSelectMenuPermission();
+                    let list = [];
+                    let tmp = []
+                    let old = that.getPermissionData();
+                    let dataMap = {};
+                    old.forEach(function(v) {
+                        dataMap[v.permissionId] = v;
+                        let dataAccessesMap = v.dataAccessesMap = {};
+                        v.dataAccesses.forEach(function(v1) {
+                            dataAccessesMap[v1.action + v1.type] = v1;
+                        });
+                    });
+
+                    function isChecked(permission, action, field) {
+                        if (old.length === 0) return true;
+                        let oldPer = dataMap[permission];
+                        if (!oldPer) return true;
+                        if (field) {
+                            if (!(oldPer.actions.indexOf(action) > -1)) return false;
+                            let dataAccess = oldPer.dataAccessesMap[action + "DENY_FIELDS"];
+                            if (dataAccess) {
+                                return !(JSON.parse(dataAccess.config).fields.indexOf(field) > -1);
+                            } else {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+
+                    menuPermissions.forEach(function(v) {
+                        if (tmp.indexOf(v.id) !== -1) return;
+                        let actions = [];
+                        let permission = v;
+                        let optionalFields = v.optionalFields;
+                        let oldPer = dataMap[permission.id];
+
+                        v.actions.forEach(function(v1) {
+                            let action = v1;
+                            let fields = [];
+                            let dataAccesses = [];
+                            if (oldPer && oldPer.dataAccesses) {
+                                oldPer.dataAccesses.forEach(function(v2) {
+                                    if (v2.type == "DENY_FIELDS") return;
+                                    if (v2.action == action.action)
+                                        dataAccesses.push(v2);
+                                });
+                            }
+                            optionalFields.forEach(function(v2) {
+                                let fieldChecked = isChecked(permission.id, action.action, v2.name);
+                                that.defaultChecks.push(that.generatorId(v, v1, v2))
+                                fields.push({
+                                    id: that.generatorId(v, v1, v2),
+                                    type: "fields",
+                                    checked: fieldChecked,
+                                    field: v2.name,
+                                    label: v2.describe ? v2.describe : v2.name
+                                });
+                            });
+                            let actionData = {
+                                id: that.generatorId(v, v1),
+                                type: "action",
+                                action: v1.action,
+                                label: v1.describe ? v1.describe : v1.action,
+                                children: Object.assign([], fields),
+                                dataAccesses: dataAccesses
+                            };
+                            if (fields.length == 0 && oldPer && oldPer.actions.indexOf(v1.action) != -1) {
+                                actionData.checked = true;
+                            }
+                            if (actionData.checked) {
+                                that.defaultChecks.push(that.generatorId(v, v1))
+                            }
+                            if (!oldPer && v1.defaultCheck) {
+                                that.defaultChecks.push(that.generatorId(v, v1))
+                            }
+                            actions.push(actionData);
+                        });
+                        list.push({
+                            id: that.generatorId(v),
+                            permission: v,
+                            permissionId: v.id,
+                            label: v.name,
+                            children: actions
+                        });
+                        tmp.push(v.id);
+                    });
+                    that.newDetails = list
+                },
+                getSelectMenuPermission() {
+                    let that = this
+                    let permissions = [];
+                    that.datasLeft.forEach(function(v) {
+                        let permission, menuPer
+                        if (v.menu) {
+                            menuPer = v.menu.permissionId
+                        } else {
+                            menuPer = v.permissionId
+                        }
+
+                        if (menuPer && menuPer.length > 0) {
+                            menuPer = menuPer.split(",")
+                        } else {
+                            menuPer = []
+                        }
+                        menuPer.forEach(function(v1) {
+                            if (permission = that.permissionMap[v1])
+                                permissions.push(permission);
+                        });
+                    });
+                    return Object.assign([], permissions)
+                },
+                getPermissionData(merge, priority) {
+                    let that = this
+                    let list = [];
+                    console.log(that.$refs.tree.getCheckedKeys().includes("file-static"))
+                    that.$refs.tree.data.forEach(function(v) {
+                        let actions = [];
+                        let dataAccesses = {};
+                        v.children.forEach(function(v1) {
+                            let action = v1;
+                            if (action.dataAccesses) {
+                                action.dataAccesses.forEach(function(v2) {
+                                    dataAccesses[v2.action + v2.type] = v2;
+                                });
+                            }
+                            if (action.children) {
+                                let denyField = [];
+                                action.children.forEach(function(v2) {
+                                    if (!v2.checked)
+                                        denyField.push(v2.field);
+                                });
+                                if (denyField.length === action.children.length && !that.$refs.tree.getCheckedKeys().includes(that.generatorId(v, action))) {
+                                    return;
+                                }
+                                //没有全部进行勾选,则进行deny操作
+                                if (denyField.length > 0) {
+                                    let fieldDataAccess = {
+                                        action: action.action,
+                                        type: "DENY_FIELDS",
+                                        describe: "不能操作字段",
+                                        config: JSON.stringify({
+                                            fields: denyField
+                                        })
+                                    };
+                                    dataAccesses[fieldDataAccess.action + fieldDataAccess.type] = fieldDataAccess;
+                                }
+                            }
+                            actions.push(action.action);
+                        });
+                        //设置
+                        if (v.dataAccesses) {
+                            v.dataAccesses.forEach(function(v1) {
+                                let dataAccess = v1;
+                                actions.forEach(function(v2) {
+                                    if (!dataAccesses[v2.action + dataAccess.type]) {
+                                        dataAccesses[v2.action + dataAccess.type] = dataAccess;
+                                    }
+                                })
+                            })
+                        }
+                        let tmp = [];
+                        for (let action in dataAccesses) {
+                            tmp.push(dataAccesses[action]);
+                        }
+                        //create data access
+                        list.push({
+                            id: that.generatorId(v),
+                            permissionId: v.permissionId,
+                            actions: actions,
+                            dataAccesses: tmp,
+                            merge: merge,
+                            priority: priority ? priority : 0
+                        });
+                    });
+                    return list;
+                },
+                initPermissionData(details) {
+                    let that = this
+                    that.defaultChecks = []
+                    if (details) {
+                        let list = [];
+                        details.forEach(function(v) {
+                            let permission = that.permissionMap[v.permissionId];
+                            let optionalFields = permission.optionalFields;
+                            let actions = [];
+                            let detail = Object.assign({}, v)
+
+                            permission.actionMap = {};
+                            permission.actions.forEach(function(v1) {
+                                permission.actionMap[v1.action] = v1;
+                            });
+                            detail.dataAccessesMap = {};
+                            if (detail.dataAccesses) {
+                                detail.dataAccesses.forEach(function(v1) {
+                                    detail.dataAccessesMap[v1.action + v1.type] = v1;
+                                });
+                            }
+
+                            function isChecked(action, field) {
+                                if (detail.actions && detail.actions.indexOf(action) == -1) return false;
+                                if (field) {
+                                    let dataAccess = detail.dataAccessesMap[action + "DENY_FIELDS"];
+                                    if (dataAccess) {
+                                        return !(JSON.parse(dataAccess.config).fields.indexOf(field) > -1);
+                                    } else {
+                                        return true;
+                                    }
+                                }
+                                return true;
+                            }
+
+                            permission.actions.forEach(function(v1) {
+                                let action = v1;
+                                let fields = [];
+                                let dataAccesses = [];
+                                if (detail.dataAccesses) {
+                                    detail.dataAccesses.forEach(function(v2) {
+                                        if (v2.type == "DENY_FIELDS") return;
+                                        if (v2.action == action.action)
+                                            dataAccesses.push(v2);
+                                    });
+                                }
+                                optionalFields.forEach(function(v2) {
+                                    let fieldChecked = isChecked(action.action, v2.name);
+                                    if (fieldChecked) {
+                                        that.defaultChecks.push(that.generatorId(v, v1, v2))
+                                    }
+                                    fields.push({
+                                        id: that.generatorId(v, v1, v2),
+                                        type: "fields",
+                                        checked: fieldChecked,
+                                        field: v2.name,
+                                        label: v2.describe ? v2.describe : v2.name
+                                    });
+                                });
+                                let actionData = {
+                                    id: that.generatorId(v, v1),
+                                    type: "action",
+                                    action: v1.action,
+                                    label: v1.describe ? v1.describe : v1.action,
+                                    children: Object.assign([], fields),
+                                    dataAccesses: dataAccesses
+                                };
+                                if (fields.length == 0 && detail.actions && detail.actions.indexOf(v1.action) != -1) {
+                                    actionData.checked = true;
+                                }
+                                if (actionData.checked) {
+                                    that.defaultChecks.push(that.generatorId(v, v1))
+                                }
+                                actions.push(actionData);
+                            });
+                            list.push({
+                                id: that.generatorId(v),
+                                permission: permission,
+                                permissionId: permission.id,
+                                label: permission.name,
+                                children: actions
+                            });
+                        });
+                        return list
+                    }
+                },
+                saveDataAccess() {
+
+                },
+                generatorId(v, v1, v2) {
+                    return (!v ? "" : (!v.id ? "" : v.id)) + (!v1 ? "" : (!v1.action ? "" : "-")) + (!v1 ? "" : (!v1.action ? "" : v1.action)) + (!v2 ? "" : (!v2.name ? "" : "-")) + (!v2 ? "" : (!v2.name ? "" : v2.name))
                 }
         }
 }
