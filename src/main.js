@@ -20,13 +20,21 @@ import store from './store'
 import i18n from './lang' // Internationalization
 import * as filters from './filters' // global filters
 import {
-  getToken, removeToken
+  getToken, removeToken, getUserId, removeUserId
 }
 from '@/utils/auth';
 import {
   menuUserTree
 }
 from '@/api/common/menu'
+import {
+  permissionAll
+}
+from '@/api/common/permission'
+import {
+  autzsetting
+}
+from '@/api/common/autzsetting'
 import getImport from '@/utils/common/menuUtil'
 Vue.use(Router)
 Vue.use(Element, {
@@ -37,9 +45,57 @@ Vue.use(Element, {
 Object.keys(filters).forEach(key => {
   Vue.filter(key, filters[key])
 })
-
+let permissions = []
 Vue.config.productionTip = false
+Vue.directive("has", {
+  bind: function(a, b, c) {
+    if (permissions && permissions.length > 0) {
+      let bl = b.value.split(',')
+      bl.forEach(function(v1) {
+        if (!permissions.includes(v1)) {
+          a.remove()
+        }
+      })
+    } else {
+      autzsetting('', 'user', getUserId()).then(response => {
+        if (response.result) {
+          let details = response.result.details
+          details.forEach(function(v) {
+            if (v.actions) {
+              v.actions.forEach(function(v1) {
+                permissions.push(generatorId(v, v1))
+              })
+            } else {
+              permissions.push(generatorId(v))
+            }
+          })
+          let bl = b.value.split(',')
+          bl.forEach(function(v1) {
+              if (!permissions.includes(v1)) {
+                a.remove()
+              }
+            })
+            // let obj = {}
+            // permissions.forEach(function(vs) {
+            //   obj[vs] = vs
+            // })
+            // console.log(JSON.stringify(obj))
+        } else {
+          a.remove()
+        }
+      })
+    }
+  },
+  update: function(value) {},
+  unbind: function() {}
+});
 
+function generatorId(v, v1, v2) {
+  return (!v ? "" : (!v.permissionId ? "" : v.permissionId)) + (!v1 ? "" : (!v1 ?
+      "" : "-")) +
+    (!v1 ? "" : (!v1 ? "" : v1)) + (!v2 ? "" : (!v2.name ? "" :
+      "-")) + (!v2 ? "" : (!v2.name ? "" : v2.name))
+}
 if (getToken()) {
   menuUserTree().then(response => {
     let accessedRouters = []
@@ -183,6 +239,7 @@ if (getToken()) {
   }).catch((response) => {
     if (response.response.status == 401) {
       removeToken()
+      removeUserId()
       new Vue({
         el: '#app',
         router,

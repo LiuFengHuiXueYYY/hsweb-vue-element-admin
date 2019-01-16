@@ -5,22 +5,22 @@
 <div class="app-container">
     <el-col :span="24" class="toolbar" style="padding-bottom: 0px;">
         <el-form :inline="true">
-            <el-form-item>
+            <el-form-item v-has="'role-query'">
                 <el-input placeholder="名称" v-model="searchName"></el-input>
             </el-form-item>
-            <el-form-item>
+            <el-form-item v-has="'role-query'">
                 <el-input placeholder="备注" v-model="searchUserName"></el-input>
             </el-form-item>
-            <el-form-item>
+            <el-form-item v-has="'role-query'">
                 <el-button type="primary" @click="doFilter()"><i class="el-icon-search"></i>搜索</el-button>
             </el-form-item>
-            <el-form-item>
+            <el-form-item v-has="'role-add'">
                 <el-button type="primary" @click="handleUpdate()">添加角色</el-button>
             </el-form-item>
         </el-form>
     </el-col>
     <!--列表-->
-    <el-table :data="tableList" v-loading="listLoading" tooltip-effect="dark" border element-loading-text="拼命加载中" style="width: 100%;">
+    <el-table v-has="'role-get'" :data="tableList" v-loading="listLoading" tooltip-effect="dark" border element-loading-text="拼命加载中" style="width: 100%;">
         <el-table-column prop="id" label="ID" show-overflow-tooltip />
         <el-table-column prop="name" label="名称" show-overflow-tooltip />
         <el-table-column label="是否启用" width="100" show-overflow-tooltip>
@@ -32,10 +32,10 @@
         <el-table-column prop="describe" label="备注" show-overflow-tooltip />
         <el-table-column prop="operation" label="操作 " width="100" show-overflow-tooltip>
             <template slot-scope="scope">
-                <el-tooltip content="编辑" placement="bottom">
+                <el-tooltip v-has="'role-update'" content="编辑" placement="bottom">
                     <span class="iconfont icon-bianji" @click="handleUpdate(scope)">&emsp;</span>
                 </el-tooltip>
-                <el-tooltip content="用户赋权" placement="bottom">
+                <el-tooltip v-has="'autz-setting-update'" content="用户赋权" placement="bottom">
                     <span class="iconfont icon-jiaoseshouquan" @click="editRole(scope.row)">&emsp;</span>
                 </el-tooltip>
             </template>

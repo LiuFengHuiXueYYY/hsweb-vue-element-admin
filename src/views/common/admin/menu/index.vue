@@ -5,32 +5,20 @@
 <div class="app-container">
     <el-col :span="24" class="toolbar" style="padding-bottom: 0px;">
         <el-form :inline="true">
-            <el-form-item>
+            <el-form-item v-has="'menu-query'">
                 <el-input placeholder="关键字" v-model="searchKey"></el-input>
             </el-form-item>
-            <el-form-item>
+            <el-form-item v-has="'menu-query'">
                 <el-button type="primary" @click="doFilter()"><i class="el-icon-search"></i>搜索</el-button>
             </el-form-item>
-            <el-form-item>
+            <el-form-item v-has="'menu-add'">
                 <el-button type="primary" @click="handleUpdate()">添加菜单</el-button>
             </el-form-item>
         </el-form>
     </el-col>
     <!--列表-->
-    <tree-table :height=650 :showIncoIndex=1 :showIndentIndex=1 :data="allMenuList" :columns="columns" border/>
+    <tree-table v-has="'menu-get'" :height=650 :showIncoIndex=1 :showIndentIndex=1 :data="allMenuList" :columns="columns" border/>
 
-    <!-- 详情弹框 -->
-    <el-dialog title="" :visible.sync="roleVisible">
-        <el-tabs type="border-card">
-            <el-tab-pane label="菜单设置">
-            </el-tab-pane>
-            <el-tab-pane label="权限设置">配置管理</el-tab-pane>
-        </el-tabs>
-        <div slot="footer" class="dialog-footer">
-            <el-button @click="roleVisible = false">取消</el-button>
-            <el-button type="primary" @click="updateAutzSettingData" class="title1">确定</el-button>
-        </div>
-    </el-dialog>
 </div>
 
 </template>
@@ -166,6 +154,7 @@ export default {
                     width: 200,
                     button: [{
                         icon: 'icon-tianjia',
+                        has:'menu-add',
                         excFun: function(row, that) {
                             let menu = ['100%', '90%', '80%', '70%', '60%', '50%', '40%', '30%', '20%', '10%']
                             that.show_div_c.width = menu[menu.indexOf(that.show_div_c.width) + 1]
@@ -188,6 +177,7 @@ export default {
                         }
                     }, {
                         icon: 'icon-ziyuanbaosongtijiaoxiaohe',
+                        has:'menu-update',
                         excFun: function(row, that) {
                             menuAddOrUpdate(row).then(response => {
                                 that.$notify({
@@ -201,6 +191,7 @@ export default {
                         }
                     }, {
                         icon: 'icon-quxiao',
+                        has:'menu-delete',
                         excFun: function(row, that) {
                             that.$confirm('此操作将永久删除该目录, 是否继续?', '提示', {
                                 confirmButtonText: '确定',
@@ -391,44 +382,6 @@ export default {
                             })
                         })
                     }
-                },
-                updateAutzSettingData() {
-                    let that = this
-                    const tempData = Object.assign({}, that.temp)
-                    let autzSettingData = {}
-                    autzSettingData.type = 'user'
-                    autzSettingData.settingFor = tempData.id
-                    let menusList = []
-                    that.datasLeft.forEach(function(obj) {
-                        let menus = {}
-                        if (obj['menu']) {
-                            Object.keys(obj).forEach(function(key) {
-                                if (key != 'parent' && key != 'children' && key != 'menu') {
-                                    menus[key] = obj[key]
-                                }
-                                if (!obj['menuId']) {
-                                    menus.menuId = obj.menu.id
-                                }
-                            })
-                            menus.parentId = obj['menu'].parentId
-                        } else {
-                            menus.menuId = obj.id
-                            menus.children = []
-                            menus.parentId = obj.parentId
-                        }
-                        menusList.push(menus)
-                    })
-                    autzSettingData.menus = buildTree(menusList)
-                    updateAutzSetting(autzSettingData).then(() => {
-
-                        that.roleVisible = false
-                        that.$notify({
-                            title: '成功',
-                            message: '更新成功',
-                            type: 'success',
-                            duration: 2000
-                        })
-                    })
                 },
                 handleSizeChange(val) {
                     this.page = val

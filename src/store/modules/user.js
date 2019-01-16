@@ -3,13 +3,14 @@ import {
 }
 from '@/api/common/login'
 import {
-  getToken, setToken, removeToken
+  getToken, setToken, removeToken, setUserId, getUserId, removeUserId
 }
 from '@/utils/auth'
 
 const user = {
   state: {
     user: '',
+    userId: getUserId(),
     status: '',
     code: '',
     token: getToken(),
@@ -28,6 +29,9 @@ const user = {
     },
     SET_TOKEN: (state, token) => {
       state.token = token
+    },
+    SET_USERID: (state, userId) => {
+      state.userId = userId
     },
     SET_INTRODUCTION: (state, introduction) => {
       state.introduction = introduction
@@ -59,7 +63,9 @@ const user = {
           loginByUsername(username, userInfo.password).then(response => {
             const data = response.result
             setToken(data.token)
+            setUserId(data.userId)
             commit('SET_TOKEN', data.token)
+            commit('SET_USERID', data.token)
             resolve()
           }).catch(error => {
             reject(error)
@@ -108,8 +114,10 @@ const user = {
         return new Promise((resolve, reject) => {
           logout(state.token).then(() => {
             commit('SET_TOKEN', '')
+            commit('SET_USERID', '')
             commit('SET_ROLES', [])
             removeToken()
+            removeUserId()
             resolve()
           }).catch(error => {
             reject(error)
@@ -123,7 +131,9 @@ const user = {
       }) {
         return new Promise(resolve => {
           commit('SET_TOKEN', '')
+          commit('SET_USERID', '')
           removeToken()
+          removeUserId()
           resolve()
         })
       },
@@ -134,6 +144,7 @@ const user = {
       }, role) {
         return new Promise(resolve => {
           commit('SET_TOKEN', role)
+          commit('SET_USERID', role)
           setToken(role)
           getUserInfo(role).then(response => {
             const data = response.data

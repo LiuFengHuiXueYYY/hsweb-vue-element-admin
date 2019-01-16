@@ -14,7 +14,7 @@
       <template slot-scope="scope">
         <div v-if="column.value == 'indexes'"><span>{{ scope.$index + 1}}</span></div>
         <div v-if="column.value == 'editBtn'" >
-          <span :class="'iconfont' + ' ' + btn.icon" v-for="(btn, index) in column.button" @click="excFun(btn.excFun, scope.row)" >&emsp;</span>
+          <span v-has="btn.has" :class="'iconfont' + ' ' + btn.icon" v-for="(btn, index) in column.button" @click="excFun(btn.excFun, scope.row)" >&emsp;</span>
         </div>
         <div @click="lrclick(scope.row)" v-if="column.value == 'el-icon-d-arrow-left'"><span><i class="el-icon-d-arrow-left"></i></span></div>
         <div @click="lrclick(scope.row)" v-if="column.value == 'el-icon-d-arrow-right'"><span><i class="el-icon-d-arrow-right"></i></span></div>

@@ -5,25 +5,25 @@
 <div class="app-container">
     <el-col :span="24" class="toolbar" style="padding-bottom: 0px;">
         <el-form :inline="true">
-            <el-form-item>
+            <el-form-item v-has="'permission-query'">
                 <el-input placeholder="ID" v-model="searchName"></el-input>
             </el-form-item>
-            <el-form-item>
+            <el-form-item v-has="'permission-query'">
                 <el-input placeholder="名称" v-model="searchName"></el-input>
             </el-form-item>
-            <el-form-item>
+            <el-form-item v-has="'permission-query'">
                 <el-input placeholder="备注" v-model="searchName"></el-input>
             </el-form-item>
-            <el-form-item>
+            <el-form-item v-has="'permission-query'">
                 <el-button type="primary" @click="doFilter()"><i class="el-icon-search"></i>搜索</el-button>
             </el-form-item>
-            <el-form-item>
+            <el-form-item v-has="'permission-add'">
                 <el-button type="primary" @click="handleUpdate()">添加权限</el-button>
             </el-form-item>
         </el-form>
     </el-col>
     <!--列表-->
-    <el-table :data="tableList" v-loading="listLoading" tooltip-effect="dark" border element-loading-text="拼命加载中" style="width: 100%;">
+    <el-table v-has="'permission-get'" :data="tableList" v-loading="listLoading" tooltip-effect="dark" border element-loading-text="拼命加载中" style="width: 100%;">
         <el-table-column prop="" label="序号" width="65" show-overflow-tooltip>
             <template scope="scope"><span>{{scope.$index+(page - 1) * pageSize + 1}} </span></template>
         </el-table-column>
@@ -38,10 +38,10 @@
         <el-table-column prop="describe" label="备注" show-overflow-tooltip />
         <el-table-column prop="operation" label="操作 " width="100" show-overflow-tooltip>
             <template slot-scope="scope">
-                <el-tooltip content="编辑" placement="bottom">
+                <el-tooltip v-has="'permission-update'" content="编辑" placement="bottom">
                     <span class="iconfont icon-bianji" @click="handleUpdate(scope)">&emsp;</span>
                 </el-tooltip>
-                <el-tooltip content="删除" placement="bottom">
+                <el-tooltip v-has="'permission-delete'" content="删除" placement="bottom">
                     <span class="iconfont icon-quxiao" @click="deletePermission(scope)">&emsp;</span>
                 </el-tooltip>
             </template>

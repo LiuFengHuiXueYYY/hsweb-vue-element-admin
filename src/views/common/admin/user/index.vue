@@ -5,22 +5,22 @@
 <div class="app-container">
     <el-col :span="24" class="toolbar" style="padding-bottom: 0px;">
         <el-form :inline="true">
-            <el-form-item>
+            <el-form-item v-has="'user-query'">
                 <el-input placeholder="姓名" v-model="searchName"></el-input>
             </el-form-item>
-            <el-form-item>
+            <el-form-item v-has="'user-query'">
                 <el-input placeholder="用户名" v-model="searchUserName"></el-input>
             </el-form-item>
-            <el-form-item>
+            <el-form-item v-has="'user-query'">
                 <el-button type="primary" @click="doFilter()"><i class="el-icon-search"></i>搜索</el-button>
             </el-form-item>
             <el-form-item>
-                <el-button type="primary" @click="handleUpdate()">添加用户</el-button>
+                <el-button v-has="'user-add'" type="primary" @click="handleUpdate()">添加用户</el-button>
             </el-form-item>
         </el-form>
     </el-col>
     <!--列表-->
-    <el-table :data="tableList" v-loading="listLoading" tooltip-effect="dark" border element-loading-text="拼命加载中" style="width: 100%;">
+    <el-table v-has="'user-get'" :data="tableList" v-loading="listLoading" tooltip-effect="dark" border element-loading-text="拼命加载中" style="width: 100%;">
         <el-table-column prop="" label="序号" width="65" show-overflow-tooltip>
             <template scope="scope"><span>{{scope.$index+(page - 1) * pageSize + 1}} </span></template>
         </el-table-column>
@@ -34,10 +34,10 @@
         </el-table-column>
         <el-table-column prop="operation" label="操作 " width="100" show-overflow-tooltip>
             <template slot-scope="scope">
-                <el-tooltip content="编辑" placement="bottom">
+                <el-tooltip v-has="'user-update'" content="编辑" placement="bottom">
                     <span class="iconfont icon-bianji" @click="handleUpdate(scope)">&emsp;</span>
                 </el-tooltip>
-                <el-tooltip content="用户赋权" placement="bottom">
+                <el-tooltip v-has="'autz-setting-update'" content="用户赋权" placement="bottom">
                     <span class="iconfont icon-jiaoseshouquan" @click="editRole(scope.row)">&emsp;</span>
                 </el-tooltip>
             </template>
@@ -92,7 +92,7 @@
         </el-form>
         <div slot="footer" class="dialog-footer">
             <el-button @click="isShowEditVisible = false">取消</el-button>
-            <el-button type="primary" :loading="listLoading" @click="updateData('rules_form')" class="title1">确定</el-button>
+            <el-button v-has="'user-add'" type="primary" :loading="listLoading" @click="updateData('rules_form')" class="title1">确定</el-button>
         </div>
     </el-dialog>
 
@@ -307,32 +307,33 @@ export default {
         },
         //生命周期
         created() {
+            let that = this
             imgCreated(this)
             this.allMenuInit()
             this.fetchData()
         },
         //此方法在于监听字段变化
         watch: {
-          datasLeft(){
-            let that = this
-            if(!JSON.stringify(that.permissionMap)=="{}"){
-              permissionAll().then(res => {
-                  let permissionList = res.result.data
-                  permissionList.forEach(function(val) {
-                      that.permissionMap[val.id] = val
-                  })
-                  that.oldDetails = that.initPermissionData([])
-                  that.newDetails = that.oldDetails
-                  that.initPermissionTabActive();
-                  that.saveDataAccess();
-              })
-            }else{
-              that.oldDetails = that.initPermissionData([])
-              that.newDetails = that.oldDetails
-              that.initPermissionTabActive();
-              that.saveDataAccess();
+            datasLeft() {
+                let that = this
+                if (!JSON.stringify(that.permissionMap) == "{}") {
+                    permissionAll().then(res => {
+                        let permissionList = res.result.data
+                        permissionList.forEach(function(val) {
+                            that.permissionMap[val.id] = val
+                        })
+                        that.oldDetails = that.initPermissionData([])
+                        that.newDetails = that.oldDetails
+                        that.initPermissionTabActive();
+                        that.saveDataAccess();
+                    })
+                } else {
+                    that.oldDetails = that.initPermissionData([])
+                    that.newDetails = that.oldDetails
+                    that.initPermissionTabActive();
+                    that.saveDataAccess();
+                }
             }
-          }
         },
         //此方法在于需要计算的属性
         computed: {},
@@ -374,18 +375,18 @@ export default {
                     autzsetting('', 'user', uid).then(response => {
                         if (response.result) {
                             let menus = response.result.menus
-                            if(JSON.stringify(that.permissionMap)=="{}"){
-                              permissionAll().then(res => {
-                                  let permissionList = res.result.data
-                                  permissionList.forEach(function(val) {
-                                      that.permissionMap[val.id] = val
-                                  })
-                                  that.oldDetails = that.initPermissionData(response.result.details)
-                                  that.newDetails = that.oldDetails
-                              })
-                            }else{
-                              that.oldDetails = that.initPermissionData(response.result.details)
-                              that.newDetails = that.oldDetails
+                            if (JSON.stringify(that.permissionMap) == "{}") {
+                                permissionAll().then(res => {
+                                    let permissionList = res.result.data
+                                    permissionList.forEach(function(val) {
+                                        that.permissionMap[val.id] = val
+                                    })
+                                    that.oldDetails = that.initPermissionData(response.result.details)
+                                    that.newDetails = that.oldDetails
+                                })
+                            } else {
+                                that.oldDetails = that.initPermissionData(response.result.details)
+                                that.newDetails = that.oldDetails
                             }
                             for (let l of menus) {
                                 let item = that.allMenuMap[l.menuId]
